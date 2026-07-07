@@ -26,9 +26,6 @@ services:
     working_dir: /app
     restart: unless-stopped
 
-    env_file:
-      - .env
-
     environment:
       NODE_ENV: development
       CHOKIDAR_USEPOLLING: "true"
