@@ -13,9 +13,7 @@ export const useCalendarStore = defineStore(
       error.value = "";
 
       try {
-        const response = await fetch(
-          "http://localhost:4000/api/calendar/events",
-        );
+        const response = await fetch("/api/calendar/events");
 
         if (!response.ok) {
           throw new Error("Could not load Google Calendar events");

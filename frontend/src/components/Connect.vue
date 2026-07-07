@@ -1,7 +1,7 @@
 <script setup>
 const connectGoogle = () => {
   const returnTo = encodeURIComponent(`${window.location.origin}/calendar`);
-  window.location.href = `http://localhost:4000/auth/google?returnTo=${returnTo}`;
+  window.location.href = `/auth/google?returnTo=${returnTo}`;
 };
 </script>
 
