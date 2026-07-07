@@ -13,7 +13,7 @@ jobs:
     uses: whodrey-labs/homelab-actions/.github/workflows/deploy-homelab.yml@main
     with:
       deploy_path: ${{ vars.HOMELAB_DEPLOY_PATH }}
-      compose_file: compose.yml
+      compose_file: compose.prod.yml
       branch: main
       use_tailscale: true
     secrets: inherit
