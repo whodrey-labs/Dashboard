@@ -10,7 +10,7 @@ jobs:
     uses: whodrey-labs/homelab-actions/.github/workflows/deploy-homelab.yml@main
     with:
       deploy_path: /home/whodrey/docker/sites/dashboard
-      compose_file: compose.prod.yml
+      compose_file: compose.yml
       branch: main
       use_tailscale: true
     secrets: inherit
