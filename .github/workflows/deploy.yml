@@ -1,0 +1,19 @@
+name: Deploy to Homelab
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+
+jobs:
+  deploy:
+    if: >
+      github.event.repository.is_template == false &&
+      vars.HOMELAB_DEPLOY_ENABLED == 'true'
+    uses: whodrey-labs/homelab-actions/.github/workflows/deploy-homelab.yml@main
+    with:
+      deploy_path: ${{ vars.HOMELAB_DEPLOY_PATH }}
+      compose_file: compose.yml
+      branch: main
+      use_tailscale: true
+    secrets: inherit

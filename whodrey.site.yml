@@ -1,0 +1,9 @@
+name: CHANGETHIS
+hostname: CHANGETHIS.whodrey.com
+type: docker
+container_port: 80
+
+# private   = deploy only, no public route
+# public    = publicly reachable
+# protected = public hostname, but requires Cloudflare Access login
+access: private
