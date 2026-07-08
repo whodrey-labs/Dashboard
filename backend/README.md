@@ -6,7 +6,7 @@ Small Express API for connecting a Google account and reading Google Calendar da
 
 - `server.js`: Express app, routes, CORS, and error handling.
 - `src/googleOAuth.js`: Google OAuth flow, token refresh, and Calendar API calls.
-- `src/tokenStore.js`: local development storage for Google tokens.
+- `src/tokenStore.js`: MongoDB storage for the Google connection and tokens.
 - `src/config.js`: `.env` loading and default configuration.
 - Root `.env`: the environment variables you need to fill in.
 
@@ -40,6 +40,6 @@ Small Express API for connecting a Google account and reading Google Calendar da
 - List calendars: `GET http://localhost:3000/api/calendar/calendars`
 - List upcoming events: `GET http://localhost:3000/api/calendar/events`
 
-## Development Note
+## Storage
 
-This starter stores the Google refresh token in a local `.tokens` file so you can test with your own account quickly. For a real multi-user app, move token storage to your database and associate tokens with your app's user records.
+The backend stores the Google connection, refresh token, and granted scopes in MongoDB.

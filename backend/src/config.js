@@ -1,5 +1,13 @@
-import "dotenv/config";
+import dotenv from "dotenv";
 import crypto from "node:crypto";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const backendRoot = path.resolve(
+  path.dirname(fileURLToPath(import.meta.url)),
+  "..",
+);
+dotenv.config({ path: path.resolve(backendRoot, "..", ".env") });
 
 // Central place for environment defaults so the route code can stay focused.
 // These values are intentionally friendly for local development.
@@ -21,6 +29,7 @@ function parseList(value) {
 const port = Number(process.env.PORT ?? 4000);
 const frontendOrigin = process.env.FRONTEND_ORIGIN ?? "http://localhost:5173";
 const configuredScopes = parseList(process.env.GOOGLE_SCOPES);
+const mongoDatabaseName = process.env.MONGODB_DB_NAME ?? "dashboard";
 
 export const config = {
   port,
@@ -39,7 +48,14 @@ export const config = {
     // Keep these scopes narrow. Add write scopes later only when the app
     // actually needs to create or edit calendar events.
     scopes: configuredScopes.length ? configuredScopes : DEFAULT_SCOPES,
-    tokenFile:
-      process.env.GOOGLE_TOKEN_FILE ?? ".tokens/google-calendar-token.json",
+  },
+  mongo: {
+    uri:
+      process.env.MONGODB_URI ??
+      `mongodb://127.0.0.1:27017/${mongoDatabaseName}`,
+    databaseName: mongoDatabaseName,
+    googleConnectionsCollection:
+      process.env.MONGODB_GOOGLE_CONNECTIONS_COLLECTION ??
+      "google_connections",
   },
 };

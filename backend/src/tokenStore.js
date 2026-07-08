@@ -1,38 +1,73 @@
-import fs from "node:fs/promises";
-import path from "node:path";
+import { MongoClient } from "mongodb";
 
-// Tiny development-only token store.
-// This lets you test with your own Google account before a real database exists.
-export class TokenStore {
-  constructor(filePath) {
-    this.filePath = path.resolve(filePath);
+const GOOGLE_CONNECTION_ID = "google-calendar";
+
+function parseScopes(scope) {
+  if (Array.isArray(scope)) {
+    return scope;
   }
 
-  async read() {
-    try {
-      const contents = await fs.readFile(this.filePath, "utf8");
-      return JSON.parse(contents);
-    } catch (error) {
-      if (error.code === "ENOENT") {
-        return null;
-      }
+  return (scope ?? "")
+    .split(/\s+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
 
+export class TokenStore {
+  constructor({ uri, databaseName, googleConnectionsCollection }) {
+    this.uri = uri;
+    this.databaseName = databaseName;
+    this.collectionName = googleConnectionsCollection;
+    this.clientPromise = null;
+  }
+
+  async client() {
+    if (!this.clientPromise) {
+      this.clientPromise = MongoClient.connect(this.uri, {
+        ignoreUndefined: true,
+      });
+    }
+
+    try {
+      return await this.clientPromise;
+    } catch (error) {
+      this.clientPromise = null;
       throw error;
     }
   }
 
+  async collection() {
+    const client = await this.client();
+    return client.db(this.databaseName).collection(this.collectionName);
+  }
+
+  async read() {
+    const collection = await this.collection();
+    return collection.findOne(
+      { _id: GOOGLE_CONNECTION_ID },
+      { projection: { _id: 0 } },
+    );
+  }
+
   async write(tokens) {
-    await fs.mkdir(path.dirname(this.filePath), { recursive: true });
-    await fs.writeFile(this.filePath, `${JSON.stringify(tokens, null, 2)}\n`);
+    const collection = await this.collection();
+    const scopes = parseScopes(tokens.scopes ?? tokens.scope);
+
+    await collection.updateOne(
+      { _id: GOOGLE_CONNECTION_ID },
+      {
+        $set: {
+          ...tokens,
+          scope: scopes.join(" "),
+          scopes,
+        },
+      },
+      { upsert: true },
+    );
   }
 
   async clear() {
-    try {
-      await fs.unlink(this.filePath);
-    } catch (error) {
-      if (error.code !== "ENOENT") {
-        throw error;
-      }
-    }
+    const collection = await this.collection();
+    await collection.deleteOne({ _id: GOOGLE_CONNECTION_ID });
   }
 }

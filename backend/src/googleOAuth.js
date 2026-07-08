@@ -126,7 +126,32 @@ async function parseGoogleResponse(response) {
   try {
     return text ? JSON.parse(text) : {};
   } catch {
-  return { raw: text };
+    return { raw: text };
+  }
+}
+
+function parseScopes(scope) {
+  return (scope ?? "")
+    .split(/\s+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function parseGoogleAccount(idToken) {
+  if (!idToken) {
+    return {};
+  }
+
+  try {
+    const [, payload] = idToken.split(".");
+    const claims = JSON.parse(Buffer.from(payload, "base64url").toString());
+
+    return {
+      email: claims.email,
+      googleAccountId: claims.sub,
+    };
+  } catch {
+    return {};
   }
 }
 
@@ -158,11 +183,15 @@ export async function exchangeCodeForTokens(code) {
     );
   }
 
+  const scopes = parseScopes(body.scope);
+
   return {
     accessToken: body.access_token,
+    ...parseGoogleAccount(body.id_token),
     expiryDate: Date.now() + body.expires_in * 1000,
     refreshToken: body.refresh_token,
-    scope: body.scope,
+    scope: scopes.join(" "),
+    scopes,
     tokenType: body.token_type,
   };
 }
@@ -194,17 +223,29 @@ async function refreshAccessToken(refreshToken) {
     );
   }
 
-  return {
+  const refreshedTokens = {
     accessToken: body.access_token,
     expiryDate: Date.now() + body.expires_in * 1000,
-    scope: body.scope,
     tokenType: body.token_type,
   };
+
+  if (body.scope) {
+    refreshedTokens.scope = body.scope;
+    refreshedTokens.scopes = parseScopes(body.scope);
+  }
+
+  return refreshedTokens;
 }
 
 export async function saveOAuthTokens(tokenStore, newTokens) {
   const existingTokens = await tokenStore.read();
   const refreshToken = newTokens.refreshToken ?? existingTokens?.refreshToken;
+  const newTokenScopes = newTokens.scopes?.length
+    ? newTokens.scopes
+    : parseScopes(newTokens.scope);
+  const scopes = newTokenScopes.length
+    ? newTokenScopes
+    : existingTokens?.scopes ?? parseScopes(existingTokens?.scope);
 
   if (!refreshToken) {
     throw createHttpError(
@@ -218,6 +259,8 @@ export async function saveOAuthTokens(tokenStore, newTokens) {
     ...newTokens,
     connectedAt: existingTokens?.connectedAt ?? new Date().toISOString(),
     refreshToken,
+    scope: scopes.join(" "),
+    scopes,
     updatedAt: new Date().toISOString(),
   };
 

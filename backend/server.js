@@ -14,7 +14,7 @@ import { TokenStore } from "./src/tokenStore.js";
 // Express entry point for the backend API.
 // The frontend can call these routes once it needs Google Calendar data.
 const app = express();
-const tokenStore = new TokenStore(config.google.tokenFile);
+const tokenStore = new TokenStore(config.mongo);
 
 app.use(
   cors({
@@ -81,7 +81,7 @@ app.get("/api/google/status", async (req, res, next) => {
 
     res.json({
       connected: Boolean(tokens?.refreshToken),
-      scopes: tokens?.scope?.split(" ") ?? [],
+      scopes: tokens?.scopes ?? tokens?.scope?.split(" ") ?? [],
       updatedAt: tokens?.updatedAt ?? null,
     });
   } catch (error) {
