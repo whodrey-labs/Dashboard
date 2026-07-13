@@ -3,6 +3,7 @@ import Home from "@/views/Home.vue";
 import CalendarView from "@/views/CalendarView.vue";
 import AlarmView from "@/views/AlarmView.vue";
 import SettingsView from "@/views/SettingsView.vue";
+import JournalView from "@/views/JournalView.vue";
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
@@ -22,6 +23,10 @@ const router = createRouter({
     {
       path: "/settings",
       component: SettingsView,
+    },
+    {
+      path: "/journal",
+      component: JournalView,
     },
   ],
 });
