@@ -1,0 +1,15 @@
+{
+  "files.exclude": {
+    "**/.vscode": true,
+    "**/.vscode.*": true,
+    "**/dist": true,
+    "**/dist.*": true,
+    "**/.github": true,
+    "**/.github.*": true,
+    "**/node_modules": true,
+    "**/node_modules.*": true,
+    "**/.tokens": true,
+    "**/.tokens.*": true,
+    "**/public.*": true
+  }
+}
