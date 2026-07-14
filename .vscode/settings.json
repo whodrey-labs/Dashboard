@@ -10,6 +10,8 @@
     "**/node_modules.*": true,
     "**/.tokens": true,
     "**/.tokens.*": true,
-    "**/public.*": true
+    "**/public.*": true,
+    "frontend\\public": true,
+    "**/public": true
   }
 }

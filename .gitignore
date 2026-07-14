@@ -4,7 +4,7 @@ dist/
 build/
 
 # Env
-.env.local
+.env
 
 # Logs
 *.log
@@ -12,3 +12,4 @@ build/
 # OS
 .DS_Store
 Thumbs.db
+.env

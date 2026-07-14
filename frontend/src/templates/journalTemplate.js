@@ -2,25 +2,21 @@ export const journalDayTemplate = [
   {
     key: "morningRoutine",
     timeLabel: "08:30 - 09:20",
-    activities: [
-      "Préparation de l'objectif du jour",
-      "Fact check pour la fun fact",
-      "Lecture mails/messages",
-      "Stand-up meeting",
-    ],
+    activities:
+      "- Préparation de l'objectif du jour\n- Fact check pour la fun fact\n- Lecture mails/messages\n- Stand-up meeting",
     objective: "",
     notes: "",
   },
   {
     key: "morningWork",
     timeLabel: "Matin",
-    activities: [],
+    activities: "",
     notes: "",
   },
   {
     key: "afternoonWork",
     timeLabel: "Apr\u00e8s-midi",
-    activities: [],
+    activities: "",
     notes: "",
   },
 ];

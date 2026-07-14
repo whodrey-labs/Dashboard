@@ -1,6 +1,5 @@
 <script setup>
 import { watch } from "vue";
-import { journalDayTemplate } from "@/templates/journalTemplate";
 
 const props = defineProps({
   journal: {
@@ -14,12 +13,6 @@ const emit = defineEmits(["close"]);
 const minRating = 1;
 const maxRating = 5;
 
-const protectedActivityEntryKey = "morningRoutine";
-
-const protectedActivities =
-  journalDayTemplate.find((entry) => entry.key === protectedActivityEntryKey)
-    ?.activities ?? [];
-
 watch(
   () => props.journal.content,
   () => {
@@ -28,44 +21,26 @@ watch(
   { deep: true },
 );
 
-function isProtectedActivityEntry(entry) {
-  return entry.key === protectedActivityEntryKey;
+function getEntryActivitiesText(entry) {
+  if (typeof entry.activities === "string") {
+    return entry.activities;
+  }
+
+  return (entry.activities ?? []).join("\n");
 }
 
-function getActivitySuggestions() {
-  return [
-    ...new Set(
-      props.journal.content.days.flatMap((day) =>
-        day.entries.flatMap((entry) =>
-          isProtectedActivityEntry(entry)
-            ? []
-            : (entry.activities ?? []).filter(
-                (activity) => !protectedActivities.includes(activity),
-              ),
-        ),
-      ),
-    ),
-  ];
+function getEntryActivityLines(entry) {
+  return getEntryActivitiesText(entry).split("\n").filter(function (activity) {
+    return activity.trim();
+  });
 }
 
 function getEntryTimeLabel(entry) {
   return entry.timeLabel ?? `${entry.startTime} - ${entry.endTime}`;
 }
 
-function updateEntryActivities(entry, activities) {
-  const selectedActivities = Array.isArray(activities) ? activities : [];
-
-  if (!isProtectedActivityEntry(entry)) {
-    entry.activities = selectedActivities;
-    return;
-  }
-
-  entry.activities = [
-    ...protectedActivities,
-    ...selectedActivities.filter(
-      (activity) => !protectedActivities.includes(activity),
-    ),
-  ];
+function updateEntryActivities(entry, activitiesText) {
+  entry.activities = String(activitiesText ?? "");
 }
 </script>
 
@@ -111,15 +86,25 @@ function updateEntryActivities(entry, activities) {
                 </td>
 
                 <td class="journal-table__activities">
-                  <v-combobox
-                    class="journal-activities-input"
-                    :model-value="entry.activities"
-                    :items="getActivitySuggestions()"
-                    chips
-                    :closable-chips="!isProtectedActivityEntry(entry)"
+                  <div
+                    v-if="entry.key === 'morningRoutine'"
+                    class="journal-activities-list"
+                  >
+                    <p
+                      v-for="activity in getEntryActivityLines(entry)"
+                      :key="activity"
+                    >
+                      {{ activity }}
+                    </p>
+                  </div>
+
+                  <v-textarea
+                    v-else
+                    :model-value="getEntryActivitiesText(entry)"
+                    auto-grow
                     density="compact"
                     hide-details
-                    multiple
+                    rows="1"
                     variant="plain"
                     @update:model-value="updateEntryActivities(entry, $event)"
                   />
@@ -253,12 +238,13 @@ function updateEntryActivities(entry, activities) {
   vertical-align: top;
 }
 
-.journal-activities-input :deep(.v-field__input) {
-  align-items: flex-start;
-  min-height: 40px;
-  padding-bottom: 6px;
-  padding-top: 6px;
-  row-gap: 4px;
+.journal-activities-list {
+  margin: 0;
+  padding: 8px 0;
+}
+
+.journal-activities-list p {
+  margin: 0;
 }
 
 .journal-objective {

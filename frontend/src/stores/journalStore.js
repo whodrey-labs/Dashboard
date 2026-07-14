@@ -20,6 +20,36 @@ export const useJournalStore = defineStore(
       return entries?.find((entry) => entry.key === key);
     }
 
+    function getActivityLines(activities) {
+      const activityText = Array.isArray(activities)
+        ? activities.join("\n")
+        : typeof activities === "string"
+          ? activities
+          : "";
+
+      return activityText.split("\n").filter(function (activity) {
+        return activity.trim();
+      });
+    }
+
+    function normalizeActivities(activities) {
+      return getActivityLines(activities).join("\n");
+    }
+
+    function normalizeMorningRoutineActivities(activities) {
+      return [
+        ...new Set(
+          getActivityLines(activities).map(function (activity) {
+            return `- ${activity.replace(/^\s*-\s*/, "")}`;
+          }),
+        ),
+      ].join("\n");
+    }
+
+    function mergeActivities(...activities) {
+      return [...new Set(activities.flatMap(getActivityLines))].join("\n");
+    }
+
     function isDayCompleted(day) {
       if (!Array.isArray(day?.entries)) {
         return false;
@@ -33,10 +63,8 @@ export const useJournalStore = defineStore(
 
       return (
         Boolean(morningRoutine?.objective?.trim()) &&
-        Boolean(
-          morningWork?.activities?.some((activity) => activity?.trim()),
-        ) &&
-        Boolean(afternoonWork?.activities?.some((activity) => activity?.trim()))
+        getActivityLines(morningWork?.activities).length > 0 &&
+        getActivityLines(afternoonWork?.activities).length > 0
       );
     }
 
@@ -50,17 +78,7 @@ export const useJournalStore = defineStore(
           return total;
         }
 
-        const activities = Array.isArray(entry.activities)
-          ? entry.activities
-          : [];
-
-        return (
-          total +
-          activities.filter(
-            (activity) =>
-              typeof activity === "string" && activity.trim().length > 0,
-          ).length
-        );
+        return total + getActivityLines(entry.activities).length;
       }, 0);
     }
 
@@ -89,22 +107,23 @@ export const useJournalStore = defineStore(
           {
             ...getTemplateEntry("morningRoutine"),
             ...oldMorningRoutine,
-            activities:
+            activities: normalizeMorningRoutineActivities(
               oldMorningRoutine.activities ??
-              getTemplateEntry("morningRoutine").activities,
+                getTemplateEntry("morningRoutine").activities,
+            ),
             objective: oldMorningRoutine.objective ?? "",
             notes: oldMorningRoutine.notes ?? "",
           },
           {
             ...getTemplateEntry("morningWork"),
             ...oldMorningWork,
-            activities: oldMorningWork.activities ?? [],
+            activities: normalizeActivities(oldMorningWork.activities),
             notes: oldMorningWork.notes ?? "",
           },
           {
             ...getTemplateEntry("afternoonWork"),
             ...oldAfternoonWork,
-            activities: oldAfternoonWork.activities ?? [],
+            activities: normalizeActivities(oldAfternoonWork.activities),
             notes: oldAfternoonWork.notes ?? "",
           },
         ];
@@ -112,10 +131,12 @@ export const useJournalStore = defineStore(
 
       const morningRoutine = {
         ...getTemplateEntry("morningRoutine"),
-        activities: uniqueActivities(
-          getTemplateEntry("morningRoutine").activities,
-          oldMorningRoutine?.activities ?? [],
-          oldStandup?.activities ?? [],
+        activities: normalizeMorningRoutineActivities(
+          mergeActivities(
+            getTemplateEntry("morningRoutine").activities,
+            oldMorningRoutine?.activities,
+            oldStandup?.activities,
+          ),
         ),
         objective: oldMorningRoutine?.objective ?? oldStandup?.objective ?? "",
         notes: combineNotes(oldMorningRoutine?.notes, oldStandup?.notes),
@@ -123,13 +144,13 @@ export const useJournalStore = defineStore(
 
       const morningWork = {
         ...getTemplateEntry("morningWork"),
-        activities: oldMorningWork?.activities ?? [],
+        activities: normalizeActivities(oldMorningWork?.activities),
         notes: oldMorningWork?.notes ?? "",
       };
 
       const afternoonWork = {
         ...getTemplateEntry("afternoonWork"),
-        activities: oldAfternoonWork?.activities ?? [],
+        activities: normalizeActivities(oldAfternoonWork?.activities),
         notes: oldAfternoonWork?.notes ?? "",
       };
 

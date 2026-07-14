@@ -46,6 +46,14 @@ const description = computed(() => {
   return "Le journal d’aujourd’hui doit encore être rempli.";
 });
 
+const currentDayObjective = computed(() => {
+  const morningRoutine = journalStore.currentDay?.entries?.find(function (entry) {
+    return entry.key === "morningRoutine";
+  });
+
+  return morningRoutine?.objective?.trim() ?? "";
+});
+
 function openJournal() {
   const journal = journalStore.ensureCurrentWeekJournal();
 
@@ -71,6 +79,10 @@ function openJournal() {
 
       <p class="mb-2">
         {{ description }}
+      </p>
+
+      <p v-if="currentDayObjective" class="mb-2">
+        <strong>Objectif :</strong> {{ currentDayObjective }}
       </p>
 
       <p v-if="journalStore.currentDay">

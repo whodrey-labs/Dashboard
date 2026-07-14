@@ -1,15 +1,31 @@
 <script setup>
-import { ref, onMounted, watch } from "vue";
+import { computed, ref, onMounted, watch } from "vue";
 import { useRoute } from "vue-router";
 import { useJournalStore } from "@/stores/journalStore";
 import JournalEdit from "@/components/JournalEdit.vue";
-import { downloadJournalMarkdown } from "@/composables/journalToMD";
+import { copyJournalAsHTML } from "@/composables/journalToHTML";
 
 const route = useRoute();
 const journalStore = useJournalStore();
 
 const isEditing = ref(false);
 const editingJournal = ref(null);
+
+const currentWeekJournal = computed(() => journalStore.currentWeekJournal);
+
+const olderJournals = computed(() => {
+  return journalStore.journals.filter(
+    (journal) => journal !== currentWeekJournal.value,
+  );
+});
+
+async function copyJournal(journal) {
+  try {
+    await copyJournalAsHTML(journal);
+  } catch (error) {
+    console.error("Impossible de copier le journal", error);
+  }
+}
 
 const journalStatusOptions = [
   {
@@ -163,84 +179,181 @@ function updateJournalStatus(journal, completed) {
       </v-col>
     </v-row>
 
-    <v-row>
-      <v-data-table
-        :headers="headers"
-        :items="journalStore.journals"
-        item-value="weekNumber"
-      >
-        <template #item.createdAt="{ item }">
-          {{ formatDate(item.createdAt) }}
-        </template>
+    <v-row class="mt-2">
+      <v-col cols="12">
+        <h2 class="mb-3">Semaine actuelle</h2>
 
-        <template #item.editedAt="{ item }">
-          {{ formatDate(item.editedAt) }}
-        </template>
+        <v-card v-if="currentWeekJournal">
+          <v-card-title>{{ currentWeekJournal.name }}</v-card-title>
 
-        <template #item.completed="{ item }">
-          <v-select
-            :model-value="item.completed ?? false"
-            :items="journalStatusOptions"
-            density="compact"
-            hide-details
-            item-title="label"
-            item-value="value"
-            variant="plain"
-            class="journal-status-select"
-            @update:model-value="updateJournalStatus(item, $event)"
-          >
-            <template #selection="{ item: statusItem }">
-              <v-chip
-                :color="getSelectStatus(statusItem, item.completed).color"
-                size="small"
-                class="journal-status-select__chip"
-              >
-                {{ getSelectStatus(statusItem, item.completed).label }}
-              </v-chip>
-            </template>
+          <v-card-text>
+            <v-row align="center">
+              <v-col cols="12" sm="auto">
+                Créé le {{ formatDate(currentWeekJournal.createdAt) }}
+              </v-col>
 
-            <template #item="{ props, item: statusItem }">
-              <v-list-item v-bind="props">
-                <template #title>
-                  <v-chip
-                    :color="getSelectStatus(statusItem, item.completed).color"
-                    size="small"
-                  >
-                    {{ getSelectStatus(statusItem, item.completed).label }}
-                  </v-chip>
-                </template>
-              </v-list-item>
-            </template>
-          </v-select>
-        </template>
+              <v-col cols="12" sm="auto">
+                Modifié le {{ formatDate(currentWeekJournal.editedAt) }}
+              </v-col>
 
-        <template #item.actions="{ item }">
-          <v-btn
-            icon="mdi-download"
-            variant="text"
-            size="small"
-            title="Exporter en Markdown"
-            @click="downloadJournalMarkdown(item)"
-          />
+              <v-col cols="12" sm="auto">
+                <v-select
+                  :model-value="currentWeekJournal.completed ?? false"
+                  :items="journalStatusOptions"
+                  density="compact"
+                  hide-details
+                  item-title="label"
+                  item-value="value"
+                  variant="plain"
+                  class="journal-status-select"
+                  @update:model-value="
+                    updateJournalStatus(currentWeekJournal, $event)
+                  "
+                >
+                  <template #selection="{ item: statusItem }">
+                    <v-chip
+                      :color="
+                        getSelectStatus(statusItem, currentWeekJournal.completed)
+                          .color
+                      "
+                      size="small"
+                      class="journal-status-select__chip"
+                    >
+                      {{
+                        getSelectStatus(statusItem, currentWeekJournal.completed)
+                          .label
+                      }}
+                    </v-chip>
+                  </template>
 
-          <v-btn
-            icon="mdi-pencil"
-            variant="text"
-            size="small"
-            title="Modifier"
-            @click="openEditDialog(item)"
-          />
-        </template>
-      </v-data-table>
+                  <template #item="{ props, item: statusItem }">
+                    <v-list-item v-bind="props">
+                      <template #title>
+                        <v-chip
+                          :color="
+                            getSelectStatus(
+                              statusItem,
+                              currentWeekJournal.completed,
+                            ).color
+                          "
+                          size="small"
+                        >
+                          {{
+                            getSelectStatus(
+                              statusItem,
+                              currentWeekJournal.completed,
+                            ).label
+                          }}
+                        </v-chip>
+                      </template>
+                    </v-list-item>
+                  </template>
+                </v-select>
+              </v-col>
+            </v-row>
+          </v-card-text>
 
-      <v-dialog v-model="isEditing" max-width="1400">
-        <JournalEdit
-          v-if="editingJournal"
-          :journal="editingJournal"
-          @close="isEditing = false"
-        />
-      </v-dialog>
+          <v-card-actions>
+            <v-btn
+              prepend-icon="mdi-content-copy"
+              variant="text"
+              @click="copyJournal(currentWeekJournal)"
+            >
+              Copier
+            </v-btn>
+
+            <v-btn
+              prepend-icon="mdi-pencil"
+              color="secondary"
+              @click="openEditDialog(currentWeekJournal)"
+            >
+              Modifier
+            </v-btn>
+          </v-card-actions>
+        </v-card>
+      </v-col>
+
+      <v-col cols="12">
+        <h2 class="mb-3">Anciens journaux</h2>
+
+        <v-data-table
+          :headers="headers"
+          :items="olderJournals"
+          item-value="weekNumber"
+        >
+          <template #item.createdAt="{ item }">
+            {{ formatDate(item.createdAt) }}
+          </template>
+
+          <template #item.editedAt="{ item }">
+            {{ formatDate(item.editedAt) }}
+          </template>
+
+          <template #item.completed="{ item }">
+            <v-select
+              :model-value="item.completed ?? false"
+              :items="journalStatusOptions"
+              density="compact"
+              hide-details
+              item-title="label"
+              item-value="value"
+              variant="plain"
+              class="journal-status-select"
+              @update:model-value="updateJournalStatus(item, $event)"
+            >
+              <template #selection="{ item: statusItem }">
+                <v-chip
+                  :color="getSelectStatus(statusItem, item.completed).color"
+                  size="small"
+                  class="journal-status-select__chip"
+                >
+                  {{ getSelectStatus(statusItem, item.completed).label }}
+                </v-chip>
+              </template>
+
+              <template #item="{ props, item: statusItem }">
+                <v-list-item v-bind="props">
+                  <template #title>
+                    <v-chip
+                      :color="getSelectStatus(statusItem, item.completed).color"
+                      size="small"
+                    >
+                      {{ getSelectStatus(statusItem, item.completed).label }}
+                    </v-chip>
+                  </template>
+                </v-list-item>
+              </template>
+            </v-select>
+          </template>
+
+          <template #item.actions="{ item }">
+            <v-btn
+              icon="mdi-content-copy"
+              variant="text"
+              size="small"
+              title="Copier le journal"
+              @click="copyJournal(item)"
+            />
+
+            <v-btn
+              icon="mdi-pencil"
+              variant="text"
+              size="small"
+              title="Modifier"
+              @click="openEditDialog(item)"
+            />
+          </template>
+        </v-data-table>
+      </v-col>
     </v-row>
+
+    <v-dialog v-model="isEditing" max-width="1400">
+      <JournalEdit
+        v-if="editingJournal"
+        :journal="editingJournal"
+        @close="isEditing = false"
+      />
+    </v-dialog>
   </v-container>
 </template>
 
