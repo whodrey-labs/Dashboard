@@ -4,7 +4,7 @@ import BotNav from "./components/BotNav.vue";
 </script>
 
 <template>
-  <v-app>
+  <v-app class="bg-background">
     <TopBar />
 
     <v-main class="mb-15">

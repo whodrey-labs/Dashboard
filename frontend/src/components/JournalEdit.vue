@@ -45,8 +45,8 @@ function updateEntryActivities(entry, activitiesText) {
 </script>
 
 <template>
-  <v-card>
-    <v-card-title>
+  <v-card class="bg-surface">
+    <v-card-title class="text-primary">
       <v-row align="center" no-gutters>
         <v-col>
           {{ props.journal.name }}
@@ -66,7 +66,7 @@ function updateEntryActivities(entry, activitiesText) {
           cols="12"
           class="journal-day"
         >
-          <h2 class="journal-day__title">
+          <h2 class="journal-day__title text-primary">
             {{ day.label }}
           </h2>
 
@@ -138,7 +138,7 @@ function updateEntryActivities(entry, activitiesText) {
         </v-col>
 
         <v-col cols="12">
-          <h2>Feedback de la semaine</h2>
+          <h2 class="journal-feedback-title text-primary">Feedback de la semaine</h2>
         </v-col>
 
         <v-col cols="12" md="6">
@@ -162,6 +162,7 @@ function updateEntryActivities(entry, activitiesText) {
             :min="minRating"
             hide-details
             label="Motivation"
+            color="primary"
             show-ticks="always"
             step="1"
             thumb-label="always"
@@ -175,6 +176,7 @@ function updateEntryActivities(entry, activitiesText) {
             :min="minRating"
             hide-details
             label="Capacité"
+            color="primary"
             show-ticks="always"
             step="1"
             thumb-label="always"
@@ -224,6 +226,7 @@ function updateEntryActivities(entry, activitiesText) {
 }
 
 .journal-table th {
+  background-color: rgba(var(--v-theme-secondary), 0.28);
   font-weight: 600;
   white-space: nowrap;
 }
@@ -255,8 +258,15 @@ function updateEntryActivities(entry, activitiesText) {
 }
 
 .journal-objective__label {
+  color: rgb(var(--v-theme-tertiary));
   font-weight: 600;
   white-space: nowrap;
+}
+
+.journal-feedback-title {
+  border-bottom: 3px solid rgb(var(--v-theme-tertiary));
+  display: inline-block;
+  padding-bottom: 4px;
 }
 
 .journal-objective :deep(.v-field__input) {

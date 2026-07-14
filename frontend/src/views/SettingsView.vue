@@ -23,7 +23,7 @@ const {
   <v-container fluid>
     <v-row class="align-center">
       <v-col>
-        <h1>Settings</h1>
+        <h1 class="text-primary">Settings</h1>
       </v-col>
       <v-col>
         <Connect />
@@ -32,7 +32,7 @@ const {
 
     <v-row>
       <v-col cols="3">
-        <v-card elevation="0" class="bg-background">
+        <v-card elevation="0" class="bg-surface">
           <v-card-text>
             <v-text-field
               v-model="settingsStore.username"

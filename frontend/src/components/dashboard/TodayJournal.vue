@@ -23,11 +23,19 @@ const statusLabel = computed(() => {
 });
 
 const statusColor = computed(() => {
+  if (!hasCurrentJournal.value) {
+    return "tertiary";
+  }
+
+  if (!journalStore.currentDay) {
+    return "info";
+  }
+
   if (journalStore.isCurrentDayFilled) {
     return "success";
   }
 
-  return "warning";
+  return "tertiary";
 });
 
 const description = computed(() => {
@@ -69,8 +77,10 @@ function openJournal() {
 </script>
 
 <template>
-  <v-card height="100%">
-    <v-card-title>Journal du jour</v-card-title>
+  <v-card class="bg-surface">
+    <div class="dashboard-card-title text-primary">
+      Journal du jour
+    </div>
 
     <v-card-text>
       <v-chip :color="statusColor" class="mb-4">
@@ -95,7 +105,7 @@ function openJournal() {
     </v-card-text>
 
     <v-card-actions>
-      <v-btn color="secondary" @click="openJournal">
+      <v-btn color="primary" @click="openJournal">
         {{
           journalStore.isCurrentDayFilled
             ? "Ouvrir le journal"
@@ -105,3 +115,14 @@ function openJournal() {
     </v-card-actions>
   </v-card>
 </template>
+
+<style scoped>
+.dashboard-card-title {
+  background-color: rgba(var(--v-theme-secondary), 0.22);
+  font-size: 1.25rem;
+  font-weight: 500;
+  letter-spacing: 0.0125em;
+  line-height: 2rem;
+  padding: 16px;
+}
+</style>

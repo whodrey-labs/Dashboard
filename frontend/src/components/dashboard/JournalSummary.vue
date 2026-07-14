@@ -16,8 +16,10 @@ function openJournalList() {
 </script>
 
 <template>
-  <v-card height="100%">
-    <v-card-title>Résumé du journal</v-card-title>
+  <v-card class="bg-surface">
+    <div class="dashboard-card-title text-primary">
+      Résumé du journal
+    </div>
 
     <v-card-text v-if="journalStore.currentWeekJournal">
       <p>Semaine {{ journalStore.currentWeekJournal.weekNumber }}</p>
@@ -37,15 +39,31 @@ function openJournalList() {
         {{ journalStore.currentWeekJournal.completed ? "terminé" : "en cours" }}
       </p>
 
-      <v-progress-linear :model-value="progress" class="mt-4" rounded />
+      <v-progress-linear
+        :model-value="progress"
+        class="mt-4"
+        color="primary"
+        rounded
+      />
     </v-card-text>
 
     <v-card-text v-else> Aucun journal pour cette semaine. </v-card-text>
 
     <v-card-actions>
-      <v-btn color="secondary" @click="openJournalList">
+      <v-btn color="secondary" variant="tonal" @click="openJournalList">
         Voir les journaux
       </v-btn>
     </v-card-actions>
   </v-card>
 </template>
+
+<style scoped>
+.dashboard-card-title {
+  background-color: rgba(var(--v-theme-secondary), 0.22);
+  font-size: 1.25rem;
+  font-weight: 500;
+  letter-spacing: 0.0125em;
+  line-height: 2rem;
+  padding: 16px;
+}
+</style>

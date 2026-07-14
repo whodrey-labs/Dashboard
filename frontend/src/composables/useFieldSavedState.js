@@ -12,7 +12,7 @@ export function useFieldSavedState() {
   }
 
   const icon = computed(() => (isEditing.value ? "mdi-pencil" : "mdi-check"));
-  const color = computed(() => (isEditing.value ? "warning" : "success"));
+  const color = computed(() => (isEditing.value ? "secondary" : "success"));
 
   return {
     isEditing,

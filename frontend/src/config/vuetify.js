@@ -22,14 +22,17 @@ export default createVuetify({
       theme: {
         dark: false,
         colors: {
-          primary: "#06908F",
-          secondary: "#0CA4A5",
-          tertiary: "#0892A5",
-          info: "#153243",
-          success: "#A5CC6B",
-          warning: "#ECC30B",
-          error: "#984447",
-          background: "#E8EEF2",
+          primary: "#6F8FC7",
+          secondary: "#91A9D6",
+          tertiary: "#F2A65A",
+
+          info: "#657B9B",
+          success: "#7FAE72",
+          warning: "#E8B44F",
+          error: "#C45D66",
+
+          background: "#F5EEDC",
+          surface: "#FFFDF7",
         },
       },
     },

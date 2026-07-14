@@ -31,7 +31,7 @@ const journalStatusOptions = [
   {
     label: "En cours",
     value: false,
-    color: "warning",
+    color: "tertiary",
   },
   {
     label: "Complété",
@@ -171,20 +171,20 @@ function updateJournalStatus(journal, completed) {
   <v-container fluid>
     <v-row no-gutters align="center" justify="space-between">
       <v-col cols="auto">
-        <h1>Journaux de travail</h1>
+        <h1 class="text-primary">Journaux de travail</h1>
       </v-col>
 
       <v-col cols="auto">
-        <v-btn color="secondary"> Create </v-btn>
+        <v-btn color="primary"> Create </v-btn>
       </v-col>
     </v-row>
 
     <v-row class="mt-2">
       <v-col cols="12">
-        <h2 class="mb-3">Semaine actuelle</h2>
+        <h2 class="mb-3 text-primary">Semaine actuelle</h2>
 
-        <v-card v-if="currentWeekJournal">
-          <v-card-title>{{ currentWeekJournal.name }}</v-card-title>
+        <v-card v-if="currentWeekJournal" class="bg-surface">
+          <v-card-title class="text-primary">{{ currentWeekJournal.name }}</v-card-title>
 
           <v-card-text>
             <v-row align="center">
@@ -256,6 +256,7 @@ function updateJournalStatus(journal, completed) {
           <v-card-actions>
             <v-btn
               prepend-icon="mdi-content-copy"
+              color="secondary"
               variant="text"
               @click="copyJournal(currentWeekJournal)"
             >
@@ -264,7 +265,7 @@ function updateJournalStatus(journal, completed) {
 
             <v-btn
               prepend-icon="mdi-pencil"
-              color="secondary"
+              color="primary"
               @click="openEditDialog(currentWeekJournal)"
             >
               Modifier
@@ -274,11 +275,12 @@ function updateJournalStatus(journal, completed) {
       </v-col>
 
       <v-col cols="12">
-        <h2 class="mb-3">Anciens journaux</h2>
+        <h2 class="mb-3 text-primary">Anciens journaux</h2>
 
         <v-data-table
           :headers="headers"
           :items="olderJournals"
+          class="journal-history-table bg-surface"
           item-value="weekNumber"
         >
           <template #item.createdAt="{ item }">
@@ -329,6 +331,7 @@ function updateJournalStatus(journal, completed) {
           <template #item.actions="{ item }">
             <v-btn
               icon="mdi-content-copy"
+              color="secondary"
               variant="text"
               size="small"
               title="Copier le journal"
@@ -337,6 +340,7 @@ function updateJournalStatus(journal, completed) {
 
             <v-btn
               icon="mdi-pencil"
+              color="primary"
               variant="text"
               size="small"
               title="Modifier"
@@ -378,5 +382,9 @@ function updateJournalStatus(journal, completed) {
 
 .journal-status-select__chip {
   cursor: pointer;
+}
+
+.journal-history-table :deep(thead) {
+  background-color: rgba(var(--v-theme-secondary), 0.28);
 }
 </style>

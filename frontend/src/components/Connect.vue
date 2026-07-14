@@ -6,5 +6,5 @@ const connectGoogle = () => {
 </script>
 
 <template>
-  <v-btn @click="connectGoogle">Connect Google Calendar</v-btn>
+  <v-btn color="primary" @click="connectGoogle">Connect Google Calendar</v-btn>
 </template>
