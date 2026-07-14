@@ -10,6 +10,7 @@ import router from "@/router";
           Dashboard
         </v-app-bar-title>
         <v-col cols="auto">
+          <v-btn to="/personal/tasks">Tâches</v-btn>
           <v-btn to="/journal">Journal</v-btn>
           <v-btn to="/calendar">Calendar</v-btn>
           <v-btn to="/settings">Settings</v-btn>
