@@ -29,14 +29,14 @@ onMounted(function () {
       <v-icon color="tertiary" icon="mdi-calendar-today" size="small" />
       Aujourd'hui
     </h2>
-    <v-row>
+    <v-row align="start">
       <v-col cols="12" lg="6">
         <h2 class="text-primary mb-4">
           <v-icon color="tertiary" icon="mdi-briefcase-outline" size="small" />
           Travail
         </h2>
 
-        <v-row>
+        <v-row align="start">
           <v-col cols="12" md="6">
             <TodayJournal />
           </v-col>
@@ -55,7 +55,7 @@ onMounted(function () {
           Personnel
         </h2>
 
-        <v-row>
+        <v-row align="start">
           <v-col cols="12" md="6">
             <v-card class="bg-surface">
               <div class="dashboard-card-title text-primary">Today's tasks</div>

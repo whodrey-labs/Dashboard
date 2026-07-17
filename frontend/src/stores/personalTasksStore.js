@@ -90,27 +90,37 @@ export const usePersonalTasksStore = defineStore(
       const monday = getMonday(weekStart);
       const weekKey = formatDate(monday);
 
-      const weekAlreadyExists = weeklyTasks.value.some(function (task) {
-        return task.weekStart === weekKey;
-      });
-
-      if (weekAlreadyExists) {
-        return;
-      }
-
       recurringTasks.value.forEach(function (recurringTask) {
-        const taskDate = new Date(monday);
+        const daysOfWeek = recurringTask.daysOfWeek?.length
+          ? recurringTask.daysOfWeek
+          : [recurringTask.defaultDay];
 
-        taskDate.setDate(taskDate.getDate() + recurringTask.defaultDay - 1);
+        daysOfWeek.forEach(function (dayOfWeek) {
+          const taskDate = new Date(monday);
 
-        weeklyTasks.value.push({
-          id: `${recurringTask.id}-${weekKey}`,
-          taskId: recurringTask.id,
-          title: recurringTask.title,
-          description: recurringTask.description,
-          date: formatDate(taskDate),
-          weekStart: weekKey,
-          completed: false,
+          taskDate.setDate(taskDate.getDate() + dayOfWeek - 1);
+
+          const taskAlreadyExists = weeklyTasks.value.some(function (task) {
+            return (
+              task.taskId === recurringTask.id &&
+              task.weekStart === weekKey &&
+              task.date === formatDate(taskDate)
+            );
+          });
+
+          if (taskAlreadyExists) {
+            return;
+          }
+
+          weeklyTasks.value.push({
+            id: `${recurringTask.id}-${weekKey}-${dayOfWeek}`,
+            taskId: recurringTask.id,
+            title: recurringTask.title,
+            description: recurringTask.description,
+            date: formatDate(taskDate),
+            weekStart: weekKey,
+            completed: false,
+          });
         });
       });
     }
@@ -156,7 +166,9 @@ export const usePersonalTasksStore = defineStore(
     }
 
     function addTask(title, description, date) {
-      const taskDate = new Date(`${date}T00:00:00`);
+      const taskDate = new Date(date);
+
+      taskDate.setHours(0, 0, 0, 0);
 
       weeklyTasks.value.push({
         id: `personal-${Date.now()}`,
@@ -165,6 +177,86 @@ export const usePersonalTasksStore = defineStore(
         date: formatDate(taskDate),
         weekStart: formatDate(getMonday(taskDate)),
         completed: false,
+      });
+    }
+
+    function addRecurringTask(title, description, daysOfWeek) {
+      recurringTasks.value.push({
+        id: `recurring-${Date.now()}`,
+        title: title.trim(),
+        description: description.trim(),
+        daysOfWeek: [...daysOfWeek].sort(),
+      });
+    }
+
+    function updateTask(taskId, title, description, date, daysOfWeek) {
+      const task = weeklyTasks.value.find(function (item) {
+        return item.id === taskId;
+      });
+
+      if (!task) {
+        return;
+      }
+
+      if (task.taskId) {
+        const recurringTask = recurringTasks.value.find(function (item) {
+          return item.id === task.taskId;
+        });
+
+        if (!recurringTask) {
+          return;
+        }
+
+        recurringTask.title = title.trim();
+        recurringTask.description = description.trim();
+        recurringTask.daysOfWeek = [...daysOfWeek].sort();
+        delete recurringTask.defaultDay;
+
+        weeklyTasks.value = weeklyTasks.value.filter(function (item) {
+          return item.taskId !== task.taskId;
+        });
+
+        return;
+      }
+
+      const taskDate = new Date(date);
+
+      taskDate.setHours(0, 0, 0, 0);
+      task.title = title.trim();
+      task.description = description.trim();
+      task.date = formatDate(taskDate);
+      task.weekStart = formatDate(getMonday(taskDate));
+    }
+
+    function deleteTask(taskId) {
+      const task = weeklyTasks.value.find(function (item) {
+        return item.id === taskId;
+      });
+
+      if (!task) {
+        return;
+      }
+
+      if (task.taskId) {
+        recurringTasks.value = recurringTasks.value.filter(function (item) {
+          return item.id !== task.taskId;
+        });
+
+        weeklyTasks.value = weeklyTasks.value.filter(function (item) {
+          return item.taskId !== task.taskId;
+        });
+
+        return;
+      }
+
+      weeklyTasks.value = weeklyTasks.value.filter(function (item) {
+        return item.id !== taskId;
+      });
+    }
+
+    function deleteTasks(taskIds) {
+      taskIds.forEach(function (taskId) {
+        deleteTask(taskId);
       });
     }
 
@@ -235,6 +327,10 @@ export const usePersonalTasksStore = defineStore(
       replaceWeekTasks,
       toggleTask,
       addTask,
+      addRecurringTask,
+      updateTask,
+      deleteTask,
+      deleteTasks,
       loadWeek,
       previousWeek,
       nextWeek,

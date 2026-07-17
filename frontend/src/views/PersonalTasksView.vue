@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from "vue";
+import { ref } from "vue";
 import draggable from "vuedraggable";
 
 import TaskTile from "@/components/dashboard/TaskTile.vue";
@@ -9,27 +9,77 @@ const personalTasksStore = usePersonalTasksStore();
 const isAddTaskDialogOpen = ref(false);
 const newTaskTitle = ref("");
 const newTaskDescription = ref("");
-const newTaskDate = ref("");
+const newTaskDate = ref(null);
+const isNewTaskRecurring = ref(false);
+const newTaskRecurringDays = ref([]);
+const isModifyMode = ref(false);
+const isDeleteMode = ref(false);
+const selectedTaskIds = ref([]);
+const isEditTaskDialogOpen = ref(false);
+const editingTask = ref(null);
+const editedTaskTitle = ref("");
+const editedTaskDescription = ref("");
+const editedTaskDate = ref(null);
+const editedTaskRecurringDays = ref([]);
 
 personalTasksStore.loadWeek();
 
-const taskDateOptions = computed(function () {
-  return personalTasksStore.weekDays.map(function (day) {
-    return {
-      title: `${day.name} (${day.dateLabel})`,
-      value: day.date,
-    };
-  });
-});
+const weekDayOptions = [
+  { title: "Monday", value: 1 },
+  { title: "Tuesday", value: 2 },
+  { title: "Wednesday", value: 3 },
+  { title: "Thursday", value: 4 },
+  { title: "Friday", value: 5 },
+  { title: "Saturday", value: 6 },
+  { title: "Sunday", value: 7 },
+];
 
 function toggleTask(taskId) {
   personalTasksStore.toggleTask(taskId);
 }
 
+function toggleModifyMode() {
+  isModifyMode.value = !isModifyMode.value;
+
+  if (isModifyMode.value) {
+    isDeleteMode.value = false;
+    selectedTaskIds.value = [];
+  }
+}
+
+function toggleDeleteMode() {
+  isDeleteMode.value = !isDeleteMode.value;
+  selectedTaskIds.value = [];
+
+  if (isDeleteMode.value) {
+    isModifyMode.value = false;
+  }
+}
+
+function toggleTaskSelection(taskId) {
+  if (selectedTaskIds.value.includes(taskId)) {
+    selectedTaskIds.value = selectedTaskIds.value.filter(function (id) {
+      return id !== taskId;
+    });
+
+    return;
+  }
+
+  selectedTaskIds.value.push(taskId);
+}
+
+function deleteSelectedTasks() {
+  personalTasksStore.deleteTasks(selectedTaskIds.value);
+  personalTasksStore.loadWeek();
+  selectedTaskIds.value = [];
+}
+
 function openAddTaskDialog() {
   newTaskTitle.value = "";
   newTaskDescription.value = "";
-  newTaskDate.value = personalTasksStore.weekDays[0].date;
+  newTaskDate.value = new Date();
+  isNewTaskRecurring.value = false;
+  newTaskRecurringDays.value = [];
   isAddTaskDialogOpen.value = true;
 }
 
@@ -38,13 +88,66 @@ function addTask() {
     return;
   }
 
-  personalTasksStore.addTask(
-    newTaskTitle.value,
-    newTaskDescription.value,
-    newTaskDate.value,
+  if (isNewTaskRecurring.value) {
+    if (newTaskRecurringDays.value.length === 0) {
+      return;
+    }
+
+    personalTasksStore.addRecurringTask(
+      newTaskTitle.value,
+      newTaskDescription.value,
+      newTaskRecurringDays.value,
+    );
+  } else {
+    personalTasksStore.addTask(
+      newTaskTitle.value,
+      newTaskDescription.value,
+      newTaskDate.value,
+    );
+  }
+
+  personalTasksStore.loadWeek(newTaskDate.value);
+  isAddTaskDialogOpen.value = false;
+}
+
+function openEditTaskDialog(task) {
+  editingTask.value = task;
+  editedTaskTitle.value = task.title;
+  editedTaskDescription.value = task.description;
+  editedTaskDate.value = new Date(`${task.date}T00:00:00`);
+
+  const recurringTask = personalTasksStore.recurringTasks.find(function (
+    item,
+  ) {
+    return item.id === task.taskId;
+  });
+
+  editedTaskRecurringDays.value = recurringTask?.daysOfWeek?.length
+    ? [...recurringTask.daysOfWeek]
+    : recurringTask?.defaultDay
+      ? [recurringTask.defaultDay]
+      : [];
+  isEditTaskDialogOpen.value = true;
+}
+
+function saveTaskChanges() {
+  if (!editedTaskTitle.value.trim()) {
+    return;
+  }
+
+  if (editingTask.value.taskId && editedTaskRecurringDays.value.length === 0) {
+    return;
+  }
+
+  personalTasksStore.updateTask(
+    editingTask.value.id,
+    editedTaskTitle.value,
+    editedTaskDescription.value,
+    editedTaskDate.value,
+    editedTaskRecurringDays.value,
   );
   personalTasksStore.loadWeek();
-  isAddTaskDialogOpen.value = false;
+  isEditTaskDialogOpen.value = false;
 }
 
 </script>
@@ -94,6 +197,37 @@ function addTask() {
       >
         Add task
       </v-btn>
+
+      <v-btn
+        :color="isModifyMode ? 'primary' : undefined"
+        :variant="isModifyMode ? 'flat' : 'tonal'"
+        prepend-icon="mdi-pencil"
+        size="small"
+        @click="toggleModifyMode"
+      >
+        {{ isModifyMode ? "Finish editing" : "Modify tasks" }}
+      </v-btn>
+
+      <v-btn
+        :color="isDeleteMode ? 'error' : undefined"
+        :variant="isDeleteMode ? 'flat' : 'tonal'"
+        prepend-icon="mdi-delete"
+        size="small"
+        @click="toggleDeleteMode"
+      >
+        {{ isDeleteMode ? "Finish deleting" : "Delete tasks" }}
+      </v-btn>
+
+      <v-btn
+        v-if="isDeleteMode"
+        color="error"
+        :disabled="selectedTaskIds.length === 0"
+        prepend-icon="mdi-delete-sweep"
+        size="small"
+        @click="deleteSelectedTasks"
+      >
+        Delete selected ({{ selectedTaskIds.length }})
+      </v-btn>
     </div>
 
     <div class="task-board">
@@ -114,11 +248,21 @@ function addTask() {
             group="personal-tasks"
             item-key="id"
             handle=".drag-handle"
+            :disabled="isModifyMode || isDeleteMode"
             class="task-drop-zone"
             @change="personalTasksStore.saveMovedTasks"
           >
             <template #item="{ element }">
-              <TaskTile :task="element" @toggle="toggleTask" />
+              <TaskTile
+                :edit-mode="isModifyMode"
+                :delete-mode="isDeleteMode"
+                :selected-for-delete="selectedTaskIds.includes(element.id)"
+                :show-drag-handle="!isModifyMode && !isDeleteMode"
+                :task="element"
+                @edit="openEditTaskDialog"
+                @select="toggleTaskSelection"
+                @toggle="toggleTask"
+              />
             </template>
           </draggable>
 
@@ -150,10 +294,27 @@ function addTask() {
             rows="3"
           />
 
-          <v-select
+          <v-date-input
             v-model="newTaskDate"
-            :items="taskDateOptions"
-            label="Day"
+            label="Date"
+            prepend-icon="mdi-calendar"
+          />
+
+          <v-switch
+            v-model="isNewTaskRecurring"
+            color="primary"
+            hide-details
+            label="Recurring task"
+          />
+
+          <v-select
+            v-if="isNewTaskRecurring"
+            v-model="newTaskRecurringDays"
+            :items="weekDayOptions"
+            chips
+            closable-chips
+            label="Repeats on"
+            multiple
           />
         </v-card-text>
 
@@ -161,6 +322,45 @@ function addTask() {
           <v-spacer />
           <v-btn @click="isAddTaskDialogOpen = false">Cancel</v-btn>
           <v-btn color="primary" @click="addTask">Add task</v-btn>
+        </v-card-actions>
+      </v-card>
+    </v-dialog>
+
+    <v-dialog v-model="isEditTaskDialogOpen" max-width="520">
+      <v-card class="bg-surface">
+        <div class="task-dialog-title text-primary">Modify task</div>
+
+        <v-card-text>
+          <v-text-field v-model="editedTaskTitle" autofocus label="Task" required />
+
+          <v-textarea
+            v-model="editedTaskDescription"
+            label="Description"
+            rows="3"
+          />
+
+          <v-select
+            v-if="editingTask?.taskId"
+            v-model="editedTaskRecurringDays"
+            :items="weekDayOptions"
+            chips
+            closable-chips
+            label="Repeats on"
+            multiple
+          />
+
+          <v-date-input
+            v-else
+            v-model="editedTaskDate"
+            label="Date"
+            prepend-icon="mdi-calendar"
+          />
+        </v-card-text>
+
+        <v-card-actions>
+          <v-spacer />
+          <v-btn @click="isEditTaskDialogOpen = false">Cancel</v-btn>
+          <v-btn color="primary" @click="saveTaskChanges">Save</v-btn>
         </v-card-actions>
       </v-card>
     </v-dialog>
